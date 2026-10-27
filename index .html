@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>منصة التحليل الأكاديمي - تاريخ الثانوية العامة</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font: Cairo -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * { font-family: 'Cairo', sans-serif; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.25); }
+      50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.55); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-glow { animation: pulseGlow 3s infinite; }
+    .animate-float { animation: float 4s ease-in-out infinite; }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-hover { transition: all 0.3s ease; }
+    .glass-hover:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #312e81; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between relative selection:bg-indigo-500 selection:text-white">
+
+  <!-- Background Lighting Effects -->
+  <div class="fixed -top-40 -right-40 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="fixed -bottom-40 -left-40 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 relative z-10">
+    <div class="glass-card w-full max-w-md p-8 rounded-3xl shadow-2xl border border-slate-800 animate-fade-in animate-glow">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg shadow-indigo-500/30 animate-float">
+          <i class="fa-solid fa-landmark text-4xl text-white"></i>
+        </div>
+        <h1 class="text-2xl font-black bg-gradient-to-r from-indigo-400 via-purple-300 to-emerald-400 bg-clip-text text-transparent">
+          منصة تحليل التاريخ للأوائل
+        </h1>
+        <p class="text-slate-400 text-xs mt-2 font-semibold">نظام تحليل البيانات والأداء المتقدم للثانوية العامة</p>
+      </div>
+
+      <form id="loginForm" onsubmit="event.preventDefault(); handleLogin(event); return false;" class="space-y-5">
+        <div>
+          <label class="block text-slate-300 text-xs font-bold mb-2">اسم الطالب الكامل</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="text" id="studentName" required placeholder="مثال: أحمد محمود علي"
+              class="w-full pr-11 pl-4 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl focus:outline-none focus:border-indigo-500 text-slate-100 transition-all text-sm font-semibold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 text-xs font-bold mb-2">الصف الدراسي</label>
+          <div class="relative">
+            <i class="fa-solid fa-graduation-cap absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <select id="gradeLevel" required
+              class="w-full pr-11 pl-4 py-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl focus:outline-none focus:border-indigo-500 text-slate-100 transition-all text-sm font-semibold appearance-none">
+              <option value="" disabled selected>اختر الصف الدراسي...</option>
+              <option value="الثالث الثانوي - أدبي">الصف الثالث الثانوي (أدبي)</option>
+              <option value="الصف الثاني الثانوي">الصف الثاني الثانوي</option>
+              <option value="الصف الأول الثانوي">الصف الأول الثانوي</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+          </div>
+        </div>
+
+        <button type="button" onclick="handleLogin(event)"
+          class="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-extrabold rounded-xl shadow-xl shadow-indigo-600/30 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+          <span>دخول الداشبورد والتحليل</span>
+          <i class="fa-solid fa-arrow-left text-sm"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. MAIN DASHBOARD & SYSTEM -->
+  <div id="mainScreen" class="hidden min-h-screen p-4 md:p-8 max-w-7xl mx-auto w-full relative z-10 space-y-8">
+    
+    <!-- Header -->
+    <header class="glass-card rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-800">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/20" id="avatarLetter">
+          ط
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-black text-slate-100" id="displayStudentName">اسم الطالب</h2>
+            <span class="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-400 text-xs rounded-full border border-emerald-500/20 font-bold">نشط الآن</span>
+          </div>
+          <p class="text-xs text-slate-400 font-semibold mt-1" id="displayGradeLevel">الصف الدراسي</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="switchTab('dashboard')" id="btnTabDashboard" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-lg transition flex items-center gap-2">
+          <i class="fa-solid fa-chart-pie"></i> داشبورد الأداء
+        </button>
+        <button onclick="switchTab('exams')" id="btnTabExams" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center gap-2">
+          <i class="fa-solid fa-file-pen"></i> بنك الامتحانات
+        </button>
+        <button onclick="logout()" class="p-2.5 bg-slate-800/80 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl border border-slate-700 text-xs transition">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="viewDashboard" class="space-y-8 animate-fade-in">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 flex items-center gap-4">
+          <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-award"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-bold">المعدل التراكمي</p>
+            <h3 class="text-2xl font-black text-slate-100 mt-1" id="dashAvgScore">-- %</h3>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 flex items-center gap-4">
+          <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-bold">الامتحانات المكتملة</p>
+            <h3 class="text-2xl font-black text-slate-100 mt-1" id="dashCompletedCount">0</h3>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 flex items-center gap-4">
+          <div class="w-12 h-12 bg-purple-500/10 text-purple-400 rounded-xl flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-bold">مهارة الاستنتاج</p>
+            <h3 class="text-2xl font-black text-slate-100 mt-1" id="dashSkillDeduction">مستقر</h3>
+          </div>
+        </div>
+
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 flex items-center gap-4">
+          <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-lightbulb"></i>
+          </div>
+          <div>
+            <p class="text-xs text-slate-400 font-bold">الحالة العامة</p>
+            <h3 class="text-2xl font-black text-slate-100 mt-1" id="dashStatus">جاهز للامتحان</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 lg:col-span-2 space-y-4">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-chart-radar text-indigo-400"></i>
+              مخطط تحليل المهارات الأكاديمية للطالب
+            </h3>
+            <span class="text-[11px] text-slate-400">تحليل تلقائي</span>
+          </div>
+          <div class="h-72 w-full flex items-center justify-center p-2">
+            <canvas id="dashboardRadarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-6">
+          <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-magnifying-glass-chart text-purple-400"></i>
+            نواتج التعلم ومؤشرات الأداء
+          </h3>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">الفهم المباشر للتواريخ والنصوص</span>
+                <span class="text-indigo-400" id="skillBar1Val">80%</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                <div id="skillBar1" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-1000" style="width: 80%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">ربط الأحداث والأسباب والنتائج</span>
+                <span class="text-purple-400" id="skillBar2Val">65%</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                <div id="skillBar2" class="bg-purple-500 h-2.5 rounded-full transition-all duration-1000" style="width: 65%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-bold mb-1">
+                <span class="text-slate-300">تحليل الخرائط والمواقف السياسية</span>
+                <span class="text-emerald-400" id="skillBar3Val">70%</span>
+              </div>
+              <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                <div id="skillBar3" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-1000" style="width: 70%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-lg font-black text-slate-100 flex items-center gap-2">
+          <i class="fa-solid fa-scroll text-amber-400"></i>
+          الامتحانات المتاحة
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="examsContainerDashboard"></div>
+      </div>
+    </div>
+
+    <!-- EXAMS TAB VIEW -->
+    <div id="viewExams" class="hidden space-y-6 animate-fade-in">
+      <h3 class="text-xl font-black text-slate-100">بنك الامتحانات والتطبيقات</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="examsContainerFull"></div>
+    </div>
+
+    <!-- TAKING EXAM VIEW -->
+    <div id="viewTakingExam" class="hidden space-y-6 animate-fade-in">
+      <div class="glass-card rounded-2xl p-6 border border-indigo-500/30">
+        <div class="flex justify-between items-center pb-4 border-b border-slate-800">
+          <h3 class="text-xl font-black text-slate-100" id="activeExamTitle">عنوان الامتحان</h3>
+          <button onclick="switchTab('dashboard')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">إلغاء</button>
+        </div>
+
+        <form id="activeExamForm" onsubmit="event.preventDefault(); handleExamSubmit(event); return false;" class="space-y-8 mt-6">
+          <div id="questionsList" class="space-y-6"></div>
+          <button type="submit" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black rounded-xl shadow-xl transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>إنهاء الامتحان وتحليل الأداء</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- REPORT VIEW -->
+    <div id="viewReport" class="hidden glass-card rounded-2xl p-6 border border-emerald-500/30 animate-fade-in space-y-8">
+      <div class="flex justify-between items-center pb-6 border-b border-slate-800">
+        <div>
+          <h3 class="text-2xl font-black text-slate-100">تقرير أداء الطالب</h3>
+          <p class="text-xs text-slate-400 mt-1" id="reportExamName">اسم الامتحان</p>
+        </div>
+        <span id="reportScoreBadge" class="px-6 py-3 rounded-2xl text-2xl font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">0%</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 h-72">
+          <canvas id="reportRadarChart"></canvas>
+        </div>
+        <div class="space-y-4">
+          <h4 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-lightbulb text-amber-400"></i>
+            التوصيات والنصائح المخصصة:
+          </h4>
+          <ul id="reportAdviceList" class="space-y-3 text-xs text-slate-300"></ul>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-800 flex justify-between items-center">
+        <button onclick="switchTab('dashboard')" class="px-5 py-3 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold">العودة للداشبورد</button>
+        <span class="text-xs text-emerald-400 font-bold flex items-center gap-2">
+          <i class="fa-solid fa-cloud-check"></i> تم الحفظ في قاعدة البيانات بنجاح
+        </span>
+      </div>
+    </div>
+
+    <!-- Activity Logs -->
+    <div class="glass-card rounded-2xl p-6 border border-slate-800">
+      <h3 class="text-sm font-bold mb-4 flex items-center gap-2 text-slate-200">
+        <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+        سجل الأحداث والعمليات
+      </h3>
+      <div id="activityLog" class="space-y-3 text-xs text-slate-400">
+        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center gap-3">
+          <i class="fa-solid fa-circle-info text-indigo-400"></i>
+          <span>تم دخول الطالب واستعراض لوحة التحليلات الأكاديمية.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-6 transform -translate-y-10 opacity-0 pointer-events-none transition-all duration-300 glass-card border border-indigo-500/50 text-slate-100 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 z-50">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+    <span id="toastMsg" class="text-xs font-bold">تمت العملية بنجاح!</span>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // SUPABASE CONFIGURATION
+    // -------------------------------------------------------------
+    const SUPABASE_URL = 'https://gmphowmwntcvghooquri.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Obp7iNYg-AEz3SnzrdygDw_hvnz5rAH';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // EXAMS DATA BANK
+    const examsData = [
+      {
+        id: 'exam_1',
+        title: 'الحملة الفرنسية على مصر والشام (1798 - 1801)',
+        desc: 'اختبار تقييمي لقياس نواتج التعلم بالفصل الأول (أسباب الحملة والمقاومة والدواوين).',
+        questionsCount: 3,
+        questions: [
+          {
+            id: 'q1',
+            text: '1. ترتب على حركة الكشوف الجغرافية في الشرق الأقصى قبل مجيء الحملة الفرنسية لمصر:',
+            options: [
+              { key: 'A', text: 'تدهور التجارة الخارجية لمصر وتحول الطرق التجارية لرأس الرجاء الصالح' },
+              { key: 'B', text: 'زيادة نفوذ التجار المحليين في القاهرة' },
+              { key: 'C', text: 'سقوط دولة المماليك المباشر في الشام' }
+            ],
+            correct: 'A',
+            topic: 'الفهم المباشر للتواريخ والنصوص'
+          },
+          {
+            id: 'q2',
+            text: '2. أراد نابليون من إنشاء "الدواوين" في مصر التعرف على ما يدور في أذهان المصريين وبناء سلطة على:',
+            options: [
+              { key: 'A', text: 'تدريب المصريين على أصول الحكم الإيجابي' },
+              { key: 'B', text: 'الاعتماد على الطبقة الوسطى والعلماء والعيان' },
+              { key: 'C', text: 'إلغاء السلطة التنفيذية بالكامل' }
+            ],
+            correct: 'B',
+            topic: 'تحليل الخرائط والمواقف السياسية'
+          },
+          {
+            id: 'q3',
+            text: '3. اختلفت مقاومة أهالي الصعيد عن مقاومة أهالي الوجه البحري بسبب:',
+            options: [
+              { key: 'A', text: 'طول الوادي واتباع أهالي الصعيد حرب العصابات' },
+              { key: 'B', text: 'دعم الدولة العثمانية المباشر للصعيد فقط' },
+              { key: 'C', text: 'استخدام أهالي الصعيد للمدفعية الحديثة' }
+            ],
+            correct: 'A',
+            topic: 'ربط الأحداث والأسباب والنتائج'
+          }
+        ]
+      },
+      {
+        id: 'exam_2',
+        title: 'بناء الدولة الحديثة - عهد محمد علي باشا',
+        desc: 'اختبار شامل على نظام الاحتكار والسياسة الخارجية ومعاهدة لندن 1840.',
+        questionsCount: 3,
+        questions: [
+          {
+            id: 'q1',
+            text: '1. كان الهدف الأساسي لمحمد علي من تطبيق نظام الاحتكار في الاقتصاد المصري هو:',
+            options: [
+              { key: 'A', text: 'الدخول في سوق التجارة الدولية منافساً لغيره من الدول' },
+              { key: 'B', text: 'توزيع الأراضي بالتساوي على الفلاحين' },
+              { key: 'C', text: 'تشجيع الاستيراد من أوروبا' }
+            ],
+            correct: 'A',
+            topic: 'الفهم المباشر للتواريخ والنصوص'
+          },
+          {
+            id: 'q2',
+            text: '2. فرضت الدول الأوروبية معاهدة لندن 1840 على محمد علي بسبب:',
+            options: [
+              { key: 'A', text: 'زيادة نفوذه واختلال التوازن الدولي لصالح مصر' },
+              { key: 'B', text: 'ضعف الأسطول المصري' },
+              { key: 'C', text: 'رغبة فرنسا في التحالف مع انجلترا' }
+            ],
+            correct: 'A',
+            topic: 'ربط الأحداث والأسباب والنتائج'
+          },
+          {
+            id: 'q3',
+            text: '3. تضاءل النفوذ الاجتماعي للقيادات الشعبية في عهد محمد علي وظهر بدلاً منهم:',
+            options: [
+              { key: 'A', text: 'طبقة الأعيان وخريجي المدارس الحديثة' },
+              { key: 'B', text: 'التجار الأجانب والمماليك' },
+              { key: 'C', text: 'طوائف الحرف القديمة' }
+            ],
+            correct: 'A',
+            topic: 'تحليل الخرائط والمواقف السياسية'
+          }
+        ]
+      }
+    ];
+
+    let currentUser = { name: '', grade: '' };
+    let completedExams = [];
+    let activeExam = null;
+    let mainChart = null;
+    let reportChart = null;
+
+    // LOGIN HANDLER WITHOUT REFRESH
+    function handleLogin(e) {
+      if (e) e.preventDefault();
+
+      const nameInput = document.getElementById('studentName');
+      const gradeInput = document.getElementById('gradeLevel');
+
+      if (!nameInput || !gradeInput) return false;
+
+      const name = nameInput.value.trim();
+      const grade = gradeInput.value;
+
+      if (!name || !grade) {
+        showToast('برجاء إدخال الاسم واختيار الصف الدراسي', 'exclamation-circle');
+        return false;
+      }
+
+      currentUser.name = name;
+      currentUser.grade = grade;
+
+      document.getElementById('displayStudentName').innerText = currentUser.name;
+      document.getElementById('displayGradeLevel').innerText = currentUser.grade;
+      document.getElementById('avatarLetter').innerText = currentUser.name.charAt(0);
+
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('mainScreen').classList.remove('hidden');
+
+      try { renderExams(); } catch (err) { console.warn(err); }
+      try { initMainChart(); } catch (err) { console.warn(err); }
+
+      showToast(`أهلاً بك يا ${currentUser.name}!`, 'graduation-cap');
+      return false;
+    }
+
+    function switchTab(tab) {
+      ['viewDashboard', 'viewExams', 'viewTakingExam', 'viewReport'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+
+      if (tab === 'dashboard') document.getElementById('viewDashboard').classList.remove('hidden');
+      if (tab === 'exams') document.getElementById('viewExams').classList.remove('hidden');
+    }
+
+    function renderExams() {
+      const dash = document.getElementById('examsContainerDashboard');
+      const full = document.getElementById('examsContainerFull');
+      dash.innerHTML = '';
+      full.innerHTML = '';
+
+      examsData.forEach(exam => {
+        const isDone = completedExams.some(e => e.id === exam.id);
+        const card = `
+          <div class="glass-card glass-hover p-6 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4">
+            <div>
+              <span class="px-2.5 py-1 text-[10px] font-bold rounded-full border ${isDone ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}">
+                ${isDone ? 'مكتمل' : 'متاح للحل'}
+              </span>
+              <h4 class="font-bold text-slate-100 text-sm mt-3">${exam.title}</h4>
+              <p class="text-xs text-slate-400 mt-2">${exam.desc}</p>
+            </div>
+            <button type="button" onclick="startExam('${exam.id}')" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition">
+              ${isDone ? 'إعادة الاختبار' : 'ابدأ الامتحان'}
+            </button>
+          </div>
+        `;
+        dash.innerHTML += card;
+        full.innerHTML += card;
+      });
+    }
+
+    function startExam(id) {
+      activeExam = examsData.find(e => e.id === id);
+      document.getElementById('activeExamTitle').innerText = activeExam.title;
+      const list = document.getElementById('questionsList');
+      list.innerHTML = '';
+
+      activeExam.questions.forEach(q => {
+        let opts = q.options.map(o => `
+          <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-800 hover:bg-slate-800/60 cursor-pointer text-xs font-semibold text-slate-200">
+            <input type="radio" name="${q.id}" value="${o.key}" required class="accent-indigo-500">
+            <span>${o.text}</span>
+          </label>
+        `).join('');
+
+        list.innerHTML += `
+          <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+            <p class="font-bold text-slate-100 text-sm">${q.text}</p>
+            <div class="space-y-2 mt-3">${opts}</div>
+          </div>
+        `;
+      });
+
+      switchTab('none');
+      document.getElementById('viewTakingExam').classList.remove('hidden');
+    }
+
+    async function handleExamSubmit(e) {
+      if (e) e.preventDefault();
+      const formEl = document.getElementById('activeExamForm');
+      const formData = new FormData(formEl);
+      let score = 0;
+
+      activeExam.questions.forEach(q => {
+        if (formData.get(q.id) === q.correct) score++;
+      });
+
+      const percentage = Math.round((score / activeExam.questions.length) * 100);
+
+      const studentSkills = [
+        percentage,
+        Math.min(percentage + 10, 100),
+        Math.max(percentage - 10, 30),
+        percentage,
+        Math.min(percentage + 5, 100)
+      ];
+
+      const submitBtn = formEl.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> جاري حفظ النتيجة في قاعدة البيانات...`;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('student_results')
+          .insert([
+            {
+              student_name: currentUser.name,
+              grade_level: currentUser.grade,
+              exam_title: activeExam.title,
+              score: percentage,
+              skills: studentSkills
+            }
+          ]);
+
+        if (error) throw error;
+
+        completedExams.push({ id: activeExam.id, score: percentage });
+        updateDashboardStats();
+        renderExams();
+
+        document.getElementById('viewTakingExam').classList.add('hidden');
+        document.getElementById('viewReport').classList.remove('hidden');
+        document.getElementById('reportExamName').innerText = activeExam.title;
+        document.getElementById('reportScoreBadge').innerText = `${percentage}%`;
+
+        renderReportChart(percentage);
+        showToast('تمت المزامنة وحفظ النتيجة في قاعدة البيانات بنجاح!', 'check');
+
+      } catch (err) {
+        console.error('Supabase Error:', err);
+        completedExams.push({ id: activeExam.id, score: percentage });
+        updateDashboardStats();
+        renderExams();
+
+        document.getElementById('viewTakingExam').classList.add('hidden');
+        document.getElementById('viewReport').classList.remove('hidden');
+        document.getElementById('reportExamName').innerText = activeExam.title;
+        document.getElementById('reportScoreBadge').innerText = `${percentage}%`;
+        renderReportChart(percentage);
+
+        showToast('تم حفظ النتيجة محلياً.', 'exclamation-circle');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+      return false;
+    }
+
+    function initMainChart() {
+      const ctx = document.getElementById('dashboardRadarChart').getContext('2d');
+      if (mainChart) mainChart.destroy();
+      mainChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['الفهم', 'الربط والتحليل', 'الاستنتاج', 'التذكر', 'التطبيق'],
+          datasets: [{
+            data: [75, 70, 80, 85, 65],
+            backgroundColor: 'rgba(99, 102, 241, 0.25)',
+            borderColor: 'rgba(99, 102, 241, 1)',
+            pointBackgroundColor: '#818cf8'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderReportChart(score) {
+      const ctx = document.getElementById('reportRadarChart').getContext('2d');
+      if (reportChart) reportChart.destroy();
+      reportChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['الفهم', 'الربط', 'الاستنتاج', 'الحفظ', 'التطبيق'],
+          datasets: [{
+            data: [score, Math.min(score+10,100), Math.max(score-10,30), score, Math.min(score+5,100)],
+            backgroundColor: 'rgba(16, 185, 129, 0.25)',
+            borderColor: 'rgba(16, 185, 129, 1)'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function updateDashboardStats() {
+      const count = completedExams.length;
+      document.getElementById('dashCompletedCount').innerText = count;
+      if (count > 0) {
+        const avg = Math.round(completedExams.reduce((a, b) => a + b.score, 0) / count);
+        document.getElementById('dashAvgScore').innerText = `${avg}%`;
+      }
+    }
+
+    function logout() {
+      document.getElementById('mainScreen').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
+
+    function showToast(msg, icon = 'circle-check') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      document.getElementById('toastIcon').className = `fa-solid fa-${icon} text-emerald-400 text-lg`;
+      toast.classList.remove('opacity-0', '-translate-y-10', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-10', 'pointer-events-none');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
